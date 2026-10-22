@@ -198,6 +198,61 @@ class YeenetModule : Module() {
       }
     }
 
+    // ---------------------------------------------------------------- TCP (line based)
+
+    AsyncFunction("tcpOpen") { id: String, host: String, port: Int, timeoutMs: Int, promise: Promise ->
+      io.execute {
+        try {
+          conns.remove(id)?.let { runCatching { it.socket.close() } }
+          val s = Socket()
+          s.tcpNoDelay = true
+          s.connect(InetSocketAddress(host, port), timeoutMs)
+          val conn = TcpConn(s, s.getOutputStream())
+          conns[id] = conn
+          promise.resolve(null)
+          var error: String? = null
+          try {
+            val reader = BufferedReader(InputStreamReader(s.getInputStream(), Charsets.UTF_8))
+            while (true) {
+              val line = reader.readLine() ?: break
+              if (line.isNotBlank()) sendEvent("onTcpLine", mapOf("id" to id, "line" to line))
+            }
+          } catch (e: Exception) {
+            error = e.message ?: e.toString()
+          }
+          if (conns.remove(id, conn)) {
+            runCatching { s.close() }
+            sendEvent("onTcpClose", mapOf("id" to id, "error" to error))
+          }
+        } catch (e: Exception) {
+          promise.reject(CodedException("TcpError", e.message ?: e.toString(), e))
+        }
+      }
+    }
+
+    AsyncFunction("tcpWrite") { id: String, text: String, promise: Promise ->
+      val conn = conns[id]
+      if (conn == null) {
+        promise.reject(CodedException("TcpClosed", "not connected", null))
+        return@AsyncFunction
+      }
+      io.execute {
+        try {
+          synchronized(conn) {
+            conn.out.write(text.toByteArray(Charsets.UTF_8))
+            conn.out.flush()
+          }
+          promise.resolve(null)
+        } catch (e: Exception) {
+          promise.reject(CodedException("TcpError", e.message ?: e.toString(), e))
+        }
+      }
+    }
+
+    Function("tcpClose") { id: String ->
+      conns.remove(id)?.let { runCatching { it.socket.close() } }
+      Unit
+    }
   }
 
   private fun releaseHotspotInternal() {
