@@ -178,6 +178,72 @@ public class YeenetModule: Module {
         promise.resolve(r.map { ["ip": $0.0, "text": String(decoding: $0.1, as: UTF8.self)] })
       }
     }
+
+    AsyncFunction("tcpOpen") { (id: String, host: String, port: Int, timeoutMs: Int, promise: Promise) in
+      self.queue.async {
+        self.closeConn(id)
+        let fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)
+        guard fd >= 0 else { promise.reject("TcpError", "socket"); return }
+        var one: Int32 = 1
+        setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &one, socklen_t(MemoryLayout<Int32>.size))
+        setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, socklen_t(MemoryLayout<Int32>.size))
+        // Non-blocking connect with timeout.
+        let flags = fcntl(fd, F_GETFL, 0)
+        _ = fcntl(fd, F_SETFL, flags | O_NONBLOCK)
+        var addr = sockaddrIn(host, port)
+        let rc = withUnsafePointer(to: &addr) {
+          $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { connect(fd, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) }
+        }
+        if rc != 0 && errno != EINPROGRESS { close(fd); promise.reject("TcpError", "connect failed"); return }
+        var pfd = pollfd(fd: fd, events: Int16(POLLOUT), revents: 0)
+        var err: Int32 = 0
+        var len = socklen_t(MemoryLayout<Int32>.size)
+        if poll(&pfd, 1, Int32(timeoutMs)) <= 0 { close(fd); promise.reject("TcpError", "connect timeout"); return }
+        getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &len)
+        if err != 0 { close(fd); promise.reject("TcpError", "connect refused"); return }
+        _ = fcntl(fd, F_SETFL, flags)
+        let conn = TcpConn(fd: fd)
+        self.lock.lock(); self.conns[id] = conn; self.lock.unlock()
+        promise.resolve(nil)
+
+        var pending = Data()
+        var buf = [UInt8](repeating: 0, count: 4096)
+        var error: String? = nil
+        while true {
+          let n = read(fd, &buf, buf.count)
+          if n == 0 { break }
+          if n < 0 { error = String(cString: strerror(errno)); break }
+          pending.append(contentsOf: buf[0..<n])
+          while let nl = pending.firstIndex(of: 0x0A) {
+            let line = String(decoding: pending[pending.startIndex..<nl], as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+            pending = Data(pending[(nl + 1)...])
+            if !line.isEmpty { self.sendEvent("onTcpLine", ["id": id, "line": line]) }
+          }
+        }
+        self.lock.lock()
+        let mine = self.conns[id] === conn
+        if mine { self.conns.removeValue(forKey: id) }
+        self.lock.unlock()
+        if mine {
+          close(fd)
+          self.sendEvent("onTcpClose", ["id": id, "error": error as Any])
+        }
+      }
+    }
+
+    AsyncFunction("tcpWrite") { (id: String, text: String, promise: Promise) in
+      self.lock.lock(); let conn = self.conns[id]; self.lock.unlock()
+      guard let c = conn else { promise.reject("TcpClosed", "not connected"); return }
+      self.queue.async {
+        let d = Data(text.utf8)
+        let n = d.withUnsafeBytes { write(c.fd, $0.baseAddress, d.count) }
+        if n == d.count { promise.resolve(nil) } else { promise.reject("TcpError", "write failed") }
+      }
+    }
+
+    Function("tcpClose") { (id: String) in
+      self.closeConn(id)
+    }
   }
 
   private func closeConn(_ id: String) {
