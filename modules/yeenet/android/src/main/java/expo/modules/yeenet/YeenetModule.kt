@@ -253,6 +253,91 @@ class YeenetModule : Module() {
       conns.remove(id)?.let { runCatching { it.socket.close() } }
       Unit
     }
+
+    // ---------------------------------------------------------------- Wi-Fi
+
+    Function("getWifiInfo") {
+      wifiInfo()
+    }
+
+    AsyncFunction("scanWifi") { timeoutMs: Int, promise: Promise ->
+      val app = context.applicationContext
+      val wm = app.getSystemService(Context.WIFI_SERVICE) as WifiManager
+      val done = CountDownLatch(1)
+      val receiver = object : BroadcastReceiver() {
+        override fun onReceive(c: Context, i: Intent) = done.countDown()
+      }
+      io.execute {
+        // startScan is throttled by Android: on timeout, fall back to the cached results.
+        try {
+          app.registerReceiver(receiver, IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
+          @Suppress("DEPRECATION")
+          if (wm.startScan()) done.await(timeoutMs.toLong(), TimeUnit.MILLISECONDS)
+          promise.resolve(scanResults(wm))
+        } catch (e: Exception) {
+          promise.reject(CodedException("ScanFailed", e.message ?: e.toString(), e))
+        } finally {
+          runCatching { app.unregisterReceiver(receiver) }
+        }
+      }
+    }
+
+    AsyncFunction("joinHotspot") { prefix: String, timeoutMs: Int, promise: Promise ->
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+        promise.reject(CodedException("Unsupported", "Android 10+ required", null))
+        return@AsyncFunction
+      }
+      releaseHotspotInternal()
+      val spec = WifiNetworkSpecifier.Builder()
+        .setSsidPattern(PatternMatcher(prefix, PatternMatcher.PATTERN_PREFIX))
+        .build()
+      val request = NetworkRequest.Builder()
+        .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+        .removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        .setNetworkSpecifier(spec)
+        .build()
+      var settled = false
+      val cb = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+          hotspot = network
+        }
+
+        override fun onLinkPropertiesChanged(network: Network, lp: LinkProperties) {
+          if (settled) return
+          val gw = gatewayOf(lp) ?: return
+          settled = true
+          hotspot = network
+          val caps = cm.getNetworkCapabilities(network)
+          val ssid = (caps?.transportInfo as? WifiInfo)?.ssid?.trim('"')
+          promise.resolve(mapOf("gateway" to gw, "ssid" to ssid))
+        }
+
+        override fun onUnavailable() {
+          if (settled) return
+          settled = true
+          hotspotCallback = null
+          promise.reject(CodedException("HotspotNotJoined", "hotspot not joined", null))
+        }
+
+        override fun onLost(network: Network) {
+          if (hotspot == network) {
+            hotspot = null
+            sendEvent("onHotspotLost", mapOf<String, Any>())
+          }
+        }
+      }
+      hotspotCallback = cb
+      try {
+        cm.requestNetwork(request, cb, timeoutMs)
+      } catch (e: Exception) {
+        hotspotCallback = null
+        promise.reject(CodedException("HotspotNotJoined", e.message ?: e.toString(), e))
+      }
+    }
+
+    Function("releaseHotspot") {
+      releaseHotspotInternal()
+    }
   }
 
   private fun releaseHotspotInternal() {
@@ -260,5 +345,51 @@ class YeenetModule : Module() {
     hotspotCallback = null
     hotspot = null
     runCatching { cm.bindProcessToNetwork(null) }
+  }
+
+  private fun gatewayOf(lp: LinkProperties): String? {
+    for (r in lp.routes) {
+      val gw = r.gateway
+      if (r.isDefaultRoute && gw is Inet4Address && !gw.isAnyLocalAddress) return gw.hostAddress
+    }
+    for (r in lp.routes) {
+      val gw = r.gateway
+      if (gw is Inet4Address && !gw.isAnyLocalAddress) return gw.hostAddress
+    }
+    return null
+  }
+
+  @SuppressLint("MissingPermission")
+  @Suppress("DEPRECATION")
+  private fun scanResults(wm: WifiManager): List<Map<String, Any>> =
+    wm.scanResults.orEmpty().filter { !it.SSID.isNullOrBlank() }.map {
+      mapOf("ssid" to it.SSID, "frequency" to it.frequency, "level" to it.level)
+    }
+
+  @SuppressLint("MissingPermission")
+  private fun wifiInfo(): Map<String, Any?> {
+    val net = cm.activeNetwork
+    val caps = net?.let { cm.getNetworkCapabilities(it) }
+    val isWifi = caps?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
+    val lp = net?.let { cm.getLinkProperties(it) }
+    val v4 = lp?.linkAddresses?.firstOrNull { it.address is Inet4Address }
+    var ssid: String? = null
+    var freq: Int? = null
+    if (isWifi) {
+      val wi = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) caps?.transportInfo as? WifiInfo else null
+      @Suppress("DEPRECATION")
+      val legacy = (context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager).connectionInfo
+      fun clean(s: String?) = s?.trim('"')?.takeUnless { it == "<unknown ssid>" || it.isBlank() }
+      ssid = clean(wi?.ssid) ?: clean(legacy?.ssid)
+      freq = wi?.frequency ?: legacy?.frequency
+    }
+    return mapOf(
+      "isWifi" to isWifi,
+      "ssid" to ssid,
+      "frequency" to freq,
+      "ip" to v4?.address?.hostAddress,
+      "prefixLength" to v4?.prefixLength,
+      "gateway" to lp?.let { gatewayOf(it) },
+    )
   }
 }
