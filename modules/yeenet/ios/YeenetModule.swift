@@ -244,6 +244,56 @@ public class YeenetModule: Module {
     Function("tcpClose") { (id: String) in
       self.closeConn(id)
     }
+
+    Function("getWifiInfo") { () -> [String: Any?] in
+      let i = wifiInterface()
+      var gw: String? = nil
+      if let ip = i?.ip {
+        let parts = ip.split(separator: ".")
+        if parts.count == 4 { gw = parts[0..<3].joined(separator: ".") + ".1" }
+      }
+      return ["isWifi": i != nil, "ssid": nil, "frequency": nil, "ip": i?.ip, "prefixLength": i?.prefix, "gateway": gw]
+    }
+
+    // iOS has no public Wi-Fi scan API: the UI falls back to typing the network name.
+    AsyncFunction("scanWifi") { (_: Int) -> [[String: Any]] in
+      []
+    }
+
+    AsyncFunction("joinHotspot") { (prefix: String, timeoutMs: Int, promise: Promise) in
+      let cfg = NEHotspotConfiguration(ssidPrefix: prefix)
+      cfg.joinOnce = true
+      NEHotspotConfigurationManager.shared.apply(cfg) { error in
+        if let e = error as NSError?, e.code != NEHotspotConfigurationError.alreadyAssociated.rawValue {
+          promise.reject("HotspotNotJoined", e.localizedDescription)
+          return
+        }
+        self.hotspotPrefix = prefix
+        // Wait for an address on the hotspot (bulb AP hands out 192.168.10.x).
+        self.queue.async {
+          let deadline = Date().addingTimeInterval(Double(timeoutMs) / 1000)
+          while Date() < deadline {
+            if let i = wifiInterface(), i.ip.hasPrefix("192.168.10.") {
+              promise.resolve(["gateway": "192.168.10.1", "ssid": nil])
+              return
+            }
+            usleep(300_000)
+          }
+          promise.reject("HotspotNotJoined", "no address on hotspot")
+        }
+      }
+    }
+
+    Function("releaseHotspot") {
+      if let p = self.hotspotPrefix {
+        NEHotspotConfigurationManager.shared.getConfiguredSSIDs { ssids in
+          for s in ssids where s.hasPrefix(p) {
+            NEHotspotConfigurationManager.shared.removeConfiguration(forSSID: s)
+          }
+        }
+      }
+      self.hotspotPrefix = nil
+    }
   }
 
   private func closeConn(_ id: String) {
