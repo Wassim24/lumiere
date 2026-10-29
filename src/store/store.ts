@@ -273,6 +273,117 @@ export function showSnack(text: string, retry?: () => void) {
 }
 export const dismissSnack = () => set({ snack: null });
 
+// ---------------------------------------------------------------- lamp commands
+
+function lampOf(id: string) {
+  const l = state.lamps.find((x) => x.id === id);
+  if (!l) throw new Error('unknown lamp');
+  return l;
+}
+
+/** Optimistic update; on failure revert to the real state and offer a retry. */
+async function run(id: string, optimistic: Partial<LampState>, action: (c: LanConnection) => Promise<unknown>) {
+  const lamp = lampOf(id);
+  patchLamp(id, optimistic);
+  try {
+    await action(connFor(lamp));
+  } catch (e) {
+    refresh(id);
+    showSnack(t.common.notResponding(lamp.name), () => run(id, optimistic, action));
+  }
+}
+
+async function ensureOn(id: string, c: LanConnection) {
+  if (!state.states[id]?.power) {
+    await cmd.setPower(c, true);
+    patchLamp(id, { power: true });
+  }
+}
+
+export const lampActions = {
+  setPower: (id: string, on: boolean) => run(id, { power: on }, (c) => cmd.setPower(c, on)),
+  toggle: (id: string) => {
+    const on = !state.states[id]?.power;
+    return run(id, { power: on }, (c) => cmd.setPower(c, on));
+  },
+  /** Slider drag: throttled + coalesced; call with final=true on release. */
+  setBright: (id: string, v: number, final = false) => {
+    patchLamp(id, { bright: v });
+    const lamp = lampOf(id);
+    coalescer.push(id + ':bright', () =>
+      run(id, { bright: v }, async (c) => {
+        await ensureOn(id, c);
+        await cmd.setBright(c, v);
+      }),
+    );
+    if (final) coalescer.flush(id + ':bright');
+    void lamp;
+  },
+  setCt: (id: string, k: number, final = false) => {
+    patchLamp(id, { ct: k, mode: 'white' });
+    coalescer.push(id + ':color', () =>
+      run(id, { ct: k, mode: 'white' }, async (c) => {
+        await ensureOn(id, c);
+        await cmd.setCt(c, k);
+      }),
+    );
+    if (final) coalescer.flush(id + ':color');
+  },
+  setHs: (id: string, hue: number, sat: number, final = false) => {
+    const rgb = hsvRgb(hue, sat);
+    patchLamp(id, { rgb, hue, sat: sat * 100, mode: 'color' });
+    coalescer.push(id + ':color', () =>
+      run(id, { rgb, mode: 'color' }, async (c) => {
+        await ensureOn(id, c);
+        await cmd.setRgb(c, rgb);
+      }),
+    );
+    if (final) {
+      coalescer.flush(id + ':color');
+      addRecent(rgb);
+    }
+  },
+  setRgb: (id: string, rgb: number) => {
+    addRecent(rgb);
+    return run(id, { rgb, mode: 'color' }, async (c) => {
+      await ensureOn(id, c);
+      await cmd.setRgb(c, rgb);
+    });
+  },
+  /** Switch mode without a specific value: reuse the last known one. */
+  setMode: (id: string, mode: 'color' | 'white') => {
+    const s = state.states[id] ?? offline();
+    if (mode === 'white') return run(id, { mode: 'white' }, async (c) => { await ensureOn(id, c); await cmd.setCt(c, s.ct); });
+    const rgb = s.rgb === 0xffffff || !s.rgb ? state.recentColors[0] : s.rgb;
+    return run(id, { mode: 'color', rgb }, async (c) => { await ensureOn(id, c); await cmd.setRgb(c, rgb); });
+  },
+  applyPreset: (id: string, p: Preset) => {
+    if (p.mode === 'white')
+      return run(id, { power: true, mode: 'white', ct: p.value!, bright: p.bright!, flowing: false }, (c) => cmd.sceneCt(c, p.value!, p.bright!));
+    if (p.mode === 'color')
+      return run(id, { power: true, mode: 'color', rgb: p.value!, bright: p.bright!, flowing: false }, (c) => cmd.sceneColor(c, p.value!, p.bright!));
+    // Flow (wake-up): start from 1700 K at 1 %, then ramp.
+    return run(id, { power: true, mode: 'white', ct: 1700, bright: 1, flowing: true }, async (c) => {
+      await cmd.sceneCt(c, 1700, 1);
+      await cmd.startCf(c, 1, p.flowAction ?? 1, p.flow!);
+    });
+  },
+  setTimer: (id: string, minutes: number) => {
+    set((s) => ({ timerChoice: { ...s.timerChoice, [id]: minutes } }));
+    if (minutes === 0) return run(id, { delayOffMin: 0 }, (c) => cmd.cronDel(c));
+    return run(id, { delayOffMin: minutes }, async (c) => {
+      await ensureOn(id, c);
+      await cmd.cronAdd(c, minutes);
+    });
+  },
+};
+
+function addRecent(rgb: number) {
+  const recentColors = [rgb, ...state.recentColors.filter((c) => c !== rgb)].slice(0, 6);
+  set({ recentColors });
+  persist();
+}
+
 // ---------------------------------------------------------------- lamps management
 
 export function setCurrentLamp(id: string) {
