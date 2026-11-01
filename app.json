@@ -1,25 +1,83 @@
 {
   "expo": {
-    "name": "lumiere",
+    "name": "Lumière",
     "slug": "lumiere",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "fr.lumiere.yeelight",
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "Lumière pilote vos lampes directement sur votre réseau Wi‑Fi local.",
+        "NSBonjourServices": [
+          "_miio._udp"
+        ],
+        "CFBundleLocalizations": [
+          "en",
+          "fr"
+        ]
+      },
+      "entitlements": {
+        "com.apple.developer.networking.HotspotConfiguration": true,
+        "com.apple.developer.networking.wifi-info": true,
+        "com.apple.developer.networking.multicast": true
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#181D27",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "fr.lumiere.yeelight",
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "ACCESS_WIFI_STATE",
+        "CHANGE_WIFI_STATE",
+        "CHANGE_NETWORK_STATE",
+        "CHANGE_WIFI_MULTICAST_STATE",
+        "NEARBY_WIFI_DEVICES",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-localization",
+        {
+          "supportedLocales": {
+            "android": [
+              "en",
+              "fr"
+            ],
+            "ios": [
+              "en",
+              "fr"
+            ]
+          }
+        }
+      ]
+    ],
+    "scheme": "lumiere",
+    "backgroundColor": "#DBEBFF",
+    "extra": {
+      "eas": {
+        "projectId": "9f6f89af-613f-4d3c-87e8-70c49961fce9"
+      }
+    },
+    "owner": "wassim24"
   }
 }
