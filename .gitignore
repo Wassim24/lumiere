@@ -39,3 +39,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# native module build output
+modules/**/build/
+__pycache__/
