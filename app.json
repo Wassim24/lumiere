@@ -8,7 +8,7 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "fr.lumiere.yeelight",
+      "bundleIdentifier": "com.wynov.lumiere",
       "infoPlist": {
         "NSLocalNetworkUsageDescription": "Lumière pilote vos lampes directement sur votre réseau Wi‑Fi local.",
         "NSBonjourServices": [
@@ -33,7 +33,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "fr.lumiere.yeelight",
+      "package": "com.wynov.lumiere",
       "permissions": [
         "INTERNET",
         "ACCESS_NETWORK_STATE",
