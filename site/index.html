@@ -1,0 +1,485 @@
+<title>Lumière</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a calm sky-blue page taken from the app; a short hero with a phone → lamp diagram, then the Play Store pages as hash views */
+:root {
+  --bg: #DBEBFF;
+  --surface: rgba(250,253,255,0.62);
+  --edge: rgba(255,255,255,0.85);
+  --ink: #0A0D12;
+  --ink2: #181D27;
+  --muted: #586070;
+  --link: #0060CC;
+  --warm: #FFC94D;
+  --lilac: #CDB4FF;
+  --strike: #C2410C;
+  --line: rgba(10,13,18,0.10);
+  --f-display: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-body: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0B1018; --surface: rgba(28,36,50,0.72); --edge: rgba(255,255,255,0.08);
+    --ink: #EEF3FA; --ink2: #E3EAF5; --muted: #9AA4B5; --link: #7DB6FF;
+    --strike: #FB8A5C; --line: rgba(255,255,255,0.10); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0B1018; --surface: rgba(28,36,50,0.72); --edge: rgba(255,255,255,0.08);
+  --ink: #EEF3FA; --ink2: #E3EAF5; --muted: #9AA4B5; --link: #7DB6FF;
+  --strike: #FB8A5C; --line: rgba(255,255,255,0.10); color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 400 16px/1.6 var(--f-body);
+  -webkit-font-smoothing: antialiased;
+}
+.wrap {
+  max-width: 1040px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+a { color: var(--link); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--link); outline-offset: 3px; border-radius: 6px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; color: var(--ink); margin: 0; }
+p { margin: 0; }
+.mono { font-family: var(--f-mono); font-size: 0.86em; letter-spacing: -0.01em; }
+
+/* Header */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+header.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+header.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 12px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); font-weight: 600; font-size: 18px; letter-spacing: -0.02em; }
+.brand svg { width: 30px; height: 30px; color: var(--ink2); }
+nav.tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+nav.tabs a {
+  text-decoration: none; color: var(--muted); font-weight: 500; font-size: 14px;
+  padding: 6px 12px; border-radius: 999px;
+}
+nav.tabs a:hover { color: var(--ink); }
+nav.tabs a[aria-current="page"] { background: var(--ink2); color: var(--bg); }
+
+/* Hero */
+.hero { padding-block: 64px 40px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: center; }
+.hero > * { min-width: 0; }
+.eyebrow { font-family: var(--f-mono); font-size: 13px; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 18px; }
+.hero h1 { font-size: clamp(38px, 6vw, 64px); line-height: 1.02; letter-spacing: -0.045em; font-weight: 600; }
+.hero h1 .off { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--strike); text-decoration-thickness: 0.07em; }
+.hero .lede { margin-top: 22px; font-size: 18px; color: var(--muted); max-width: 34em; }
+.cta { margin-top: 28px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.badge {
+  display: inline-flex; align-items: center; gap: 10px; padding: 12px 18px; border-radius: 14px;
+  background: var(--ink2); color: var(--bg); font-weight: 500; font-size: 15px;
+}
+.badge small { display: block; font-size: 11px; opacity: 0.7; font-weight: 400; line-height: 1.2; }
+.badge span { line-height: 1.25; }
+.ghost { color: var(--ink); font-weight: 500; text-decoration: none; padding: 12px 6px; }
+.ghost:hover { text-decoration: underline; }
+
+/* Diagram */
+.diagram {
+  background: var(--surface); border: 1px solid var(--edge); border-radius: 28px;
+  padding: 28px 24px; display: grid; gap: 18px;
+}
+.diagram svg { width: 100%; height: auto; display: block; }
+.diagram .cap { font-size: 13px; color: var(--muted); text-align: center; }
+.dg-text { fill: var(--ink); font-family: var(--f-body); font-size: 13px; font-weight: 500; }
+.dg-sub { fill: var(--muted); font-family: var(--f-mono); font-size: 11px; }
+.dg-stroke { stroke: var(--ink2); }
+.dg-fill { fill: var(--ink2); }
+.dg-bg { fill: var(--bg); }
+.dg-cloud { fill: none; stroke: var(--muted); stroke-dasharray: 4 4; }
+.dg-cross { stroke: var(--strike); }
+.dg-glow { fill: var(--warm); }
+.pulse { animation: pulse 2.4s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity: .35 } 50% { opacity: .9 } }
+.flow { stroke-dasharray: 3 7; animation: flow 1.2s linear infinite; }
+@keyframes flow { to { stroke-dashoffset: -10 } }
+@media (prefers-reduced-motion: reduce) { .pulse, .flow { animation: none; } }
+
+/* Sections */
+section.block { padding-block: 40px; border-top: 1px solid var(--line); }
+section.block > h2 { font-size: clamp(26px, 3.4vw, 34px); letter-spacing: -0.03em; font-weight: 600; line-height: 1.15; }
+section.block > .intro { margin-top: 10px; color: var(--muted); max-width: 40em; }
+.grid3 { margin-top: 28px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid3 > div { min-width: 0; padding: 22px; border-radius: 22px; background: var(--surface); border: 1px solid var(--edge); display: grid; gap: 8px; align-content: start; }
+.grid3 h3 { font-size: 17px; font-weight: 600; letter-spacing: -0.015em; }
+.grid3 p { color: var(--muted); font-size: 15px; }
+.dot { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--bg); border: 1px solid var(--edge); color: var(--ink2); }
+.dot svg { width: 18px; height: 18px; }
+
+.compare { margin-top: 28px; overflow-x: auto; }
+.compare table { width: 100%; border-collapse: collapse; min-width: 520px; font-size: 15px; }
+.compare th, .compare td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.compare th { font-weight: 500; color: var(--muted); font-size: 13px; }
+.compare td:first-child { color: var(--muted); }
+.compare td.us { color: var(--ink); font-weight: 500; }
+
+.specs { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-family: var(--f-mono); font-size: 13px; padding: 6px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--edge); color: var(--ink2); }
+
+/* Document pages */
+.doc { padding-block: 48px 64px; max-width: 720px; }
+.doc .eyebrow { margin-bottom: 10px; }
+.doc h1 { font-size: clamp(32px, 5vw, 44px); letter-spacing: -0.035em; font-weight: 600; line-height: 1.1; }
+.doc .meta { margin-top: 10px; color: var(--muted); font-size: 14px; }
+.doc .summary { margin-top: 28px; padding: 20px 22px; border-radius: 20px; background: var(--surface); border: 1px solid var(--edge); }
+.doc .summary p { font-weight: 500; }
+.doc h2 { margin-top: 40px; font-size: 21px; letter-spacing: -0.02em; font-weight: 600; }
+.doc h3 { margin-top: 22px; font-size: 16px; font-weight: 600; }
+.doc p, .doc ul, .doc ol { margin-top: 12px; color: var(--ink); }
+.doc ul, .doc ol { padding-left: 1.2em; display: grid; gap: 6px; }
+.doc li::marker { color: var(--muted); }
+.doc .tbl { margin-top: 16px; overflow-x: auto; }
+.doc table { width: 100%; border-collapse: collapse; font-size: 14.5px; min-width: 480px; }
+.doc th, .doc td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.doc th { color: var(--muted); font-weight: 500; font-size: 13px; }
+.doc code { font-family: var(--f-mono); font-size: 0.88em; background: var(--surface); border: 1px solid var(--edge); padding: 1px 6px; border-radius: 6px; }
+
+.faq { margin-top: 12px; display: grid; gap: 10px; }
+.faq details { background: var(--surface); border: 1px solid var(--edge); border-radius: 16px; padding: 14px 18px; }
+.faq summary { cursor: pointer; font-weight: 500; }
+.faq details p, .faq details ol { color: var(--ink); }
+
+.contact { margin-top: 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.contact .addr { font-family: var(--f-mono); font-size: 15px; padding: 10px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--edge); user-select: all; }
+.contact button { font: 500 14px var(--f-body); padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--ink2); color: var(--bg); cursor: pointer; }
+
+footer { border-top: 1px solid var(--line); }
+footer .wrap { padding-block: 28px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 14px; }
+footer nav { display: flex; gap: 16px; flex-wrap: wrap; }
+footer a { color: var(--muted); }
+
+@media (max-width: 820px) {
+  .hero { grid-template-columns: 1fr; padding-block: 40px 28px; gap: 32px; }
+  .grid3 { grid-template-columns: 1fr; }
+}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#home" data-view="home"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><path d="M500.00 123.20C509.86 123.20 519.75 121.08 530.10 117.59C540.45 114.09 551.28 109.29 562.57 104.92C573.87 100.56 585.60 96.73 597.21 95.10C608.81 93.47 620.24 94.09 630.78 97.51C641.31 100.94 650.92 107.15 659.35 115.29C667.78 123.43 675.02 133.43 681.60 143.60C688.17 153.76 694.11 164.02 700.43 172.93C706.75 181.84 713.50 189.36 721.48 195.16C729.46 200.96 738.70 205.06 749.13 208.31C759.55 211.57 771.14 214.05 782.84 217.16C794.54 220.27 806.29 224.07 816.64 229.57C826.98 235.07 835.86 242.29 842.38 251.25C848.89 260.21 853.01 270.89 855.04 282.43C857.08 293.97 857.06 306.32 856.40 318.40C855.75 330.49 854.52 342.28 854.40 353.20C854.27 364.13 855.31 374.18 858.36 383.56C861.41 392.94 866.48 401.69 873.00 410.45C879.52 419.21 887.44 428.03 895.08 437.43C902.71 446.82 909.98 456.80 915.12 467.33C920.26 477.86 923.20 488.92 923.20 500.00C923.20 511.08 920.26 522.14 915.12 532.67C909.98 543.20 902.71 553.18 895.08 562.57C887.44 571.97 879.52 580.79 873.00 589.55C866.48 598.31 861.41 607.06 858.36 616.44C855.31 625.82 854.27 635.87 854.40 646.80C854.52 657.72 855.75 669.51 856.40 681.60C857.06 693.68 857.08 706.03 855.04 717.57C853.01 729.11 848.89 739.79 842.38 748.75C835.86 757.71 826.98 764.93 816.64 770.43C806.29 775.93 794.54 779.73 782.84 782.84C771.14 785.95 759.55 788.43 749.13 791.69C738.70 794.94 729.46 799.04 721.48 804.84C713.50 810.64 706.75 818.16 700.43 827.07C694.11 835.98 688.17 846.24 681.60 856.40C675.02 866.57 667.78 876.57 659.35 884.71C650.92 892.85 641.31 899.06 630.78 902.49C620.24 905.91 608.81 906.53 597.21 904.90C585.60 903.27 573.87 899.44 562.57 895.08C551.28 890.71 540.45 885.91 530.10 882.41C519.75 878.92 509.86 876.80 500.00 876.80C490.14 876.80 480.25 878.92 469.90 882.41C459.55 885.91 448.72 890.71 437.43 895.08C426.13 899.44 414.40 903.27 402.79 904.90C391.19 906.53 379.76 905.91 369.22 902.49C358.69 899.06 349.08 892.85 340.65 884.71C332.22 876.57 324.98 866.57 318.40 856.40C311.83 846.24 305.89 835.98 299.57 827.07C293.25 818.16 286.50 810.64 278.52 804.84C270.54 799.04 261.30 794.94 250.87 791.69C240.45 788.43 228.86 785.95 217.16 782.84C205.46 779.73 193.71 775.93 183.36 770.43C173.02 764.93 164.14 757.71 157.62 748.75C151.11 739.79 146.99 729.11 144.96 717.57C142.92 706.03 142.94 693.68 143.60 681.60C144.25 669.51 145.48 657.72 145.60 646.80C145.73 635.87 144.69 625.82 141.64 616.44C138.59 607.06 133.52 598.31 127.00 589.55C120.48 580.79 112.56 571.97 104.92 562.57C97.29 553.18 90.02 543.20 84.88 532.67C79.74 522.14 76.80 511.08 76.80 500.00C76.80 488.92 79.74 477.86 84.88 467.33C90.02 456.80 97.29 446.82 104.92 437.43C112.56 428.03 120.48 419.21 127.00 410.45C133.52 401.69 138.59 392.94 141.64 383.56C144.69 374.18 145.73 364.13 145.60 353.20C145.48 342.28 144.25 330.49 143.60 318.40C142.94 306.32 142.92 293.97 144.96 282.43C146.99 270.89 151.11 260.21 157.62 251.25C164.14 242.29 173.02 235.07 183.36 229.57C193.71 224.07 205.46 220.27 217.16 217.16C228.86 214.05 240.45 211.57 250.87 208.31C261.30 205.06 270.54 200.96 278.52 195.16C286.50 189.36 293.25 181.84 299.57 172.93C305.89 164.02 311.83 153.76 318.40 143.60C324.98 133.43 332.22 123.43 340.65 115.29C349.08 107.15 358.69 100.94 369.22 97.51C379.76 94.09 391.19 93.47 402.79 95.10C414.40 96.73 426.13 100.56 437.43 104.92C448.72 109.29 459.55 114.09 469.90 117.59C480.25 121.08 490.14 123.20 500.00 123.20Z" fill="#FFC94D"/><g transform="translate(0 -18) rotate(-10 500 500) translate(500 500) scale(1.2) translate(-500 -487)"><path d="M437 585H563V640C563 680 535 712 500 712C465 712 437 680 437 640Z" fill="#CDB4FF"/><path d="M500 262C587 262 652 328 652 412C652 468 626 505 596 538C577 559 566 578 563 600L437 600C434 578 423 559 404 538C374 505 348 468 348 412C348 328 413 262 500 262Z" fill="currentColor"/></g></svg>
+ Lumière</a>
+    <nav class="tabs" aria-label="Pages">
+      <a href="#home" data-view="home">Home</a>
+      <a href="#privacy" data-view="privacy">Privacy</a>
+      <a href="#terms" data-view="terms">Terms</a>
+      <a href="#support" data-view="support">Support</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<!-- ============ HOME ============ -->
+<div id="v-home" class="view">
+  <div class="wrap">
+    <div class="hero">
+      <div>
+        <p class="eyebrow">Yeelight lamps · Android</p>
+        <h1>Your lamps, your Wi‑Fi. <span class="off">The cloud.</span></h1>
+        <p class="lede">Lumière controls your Yeelight bulbs directly over your home network. No account, no server, no tracking. Your phone talks to your lamp and to nobody else.</p>
+        <div class="cta">
+          <span class="badge"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 3.5v17c0 .4.4.6.7.4l9.8-8.5L4.7 3.1c-.3-.2-.7 0-.7.4Zm11.6 9.9 2.6 2.3-11 6.2 8.4-8.5Zm0-2.8L7.2 2.1l11 6.2-2.6 2.3Zm1.2 1.4 2.9-2.5 2.2 1.3c.6.4.6 1.2 0 1.6l-2.2 1.3-2.9-1.7Z"/></svg><span><small>Coming soon to</small>Google Play</span></span>
+          <a class="ghost" href="#privacy" data-view="privacy">Read the privacy policy →</a>
+        </div>
+      </div>
+
+      <figure class="diagram" aria-label="Diagram: the phone controls the lamp through the local Wi‑Fi router, without going through the cloud">
+        <svg viewBox="0 0 360 230" role="img">
+          <title>Phone, router and lamp on the same local network; the cloud is crossed out</title>
+          <path class="dg-cloud" stroke-width="1.5" d="M146 58c-10 0-17-7-17-16s7-16 17-16c3-9 12-15 22-15 12 0 21 8 23 18 9 0 16 6 16 14s-7 15-16 15Z"/>
+          <line class="dg-cross" x1="136" y1="12" x2="214" y2="70" stroke-width="3" stroke-linecap="round"/>
+          <text class="dg-sub" x="180" y="88" text-anchor="middle">no server</text>
+          <rect x="8" y="106" width="344" height="116" rx="20" fill="none" class="dg-stroke" stroke-opacity=".18" stroke-width="1.5"/>
+          <text class="dg-sub" x="24" y="124">home network · 2.4 GHz</text>
+          <rect x="34" y="140" width="40" height="66" rx="9" class="dg-fill"/>
+          <rect x="39" y="148" width="30" height="46" rx="4" class="dg-bg"/>
+          <circle cx="54" cy="171" r="7" class="dg-glow"/>
+          <text class="dg-text" x="54" y="218" text-anchor="middle" font-size="11">Phone</text>
+          <rect x="156" y="170" width="48" height="22" rx="6" class="dg-fill"/>
+          <line x1="168" y1="170" x2="164" y2="152" class="dg-stroke" stroke-width="3" stroke-linecap="round"/>
+          <line x1="192" y1="170" x2="196" y2="152" class="dg-stroke" stroke-width="3" stroke-linecap="round"/>
+          <text class="dg-text" x="180" y="210" text-anchor="middle" font-size="11">Router</text>
+          <circle cx="306" cy="160" r="26" class="dg-glow pulse"/>
+          <circle cx="306" cy="160" r="15" class="dg-glow"/>
+          <rect x="299" y="176" width="14" height="14" rx="3" class="dg-fill"/>
+          <text class="dg-text" x="306" y="210" text-anchor="middle" font-size="11">Lamp</text>
+          <line class="dg-stroke flow" x1="82" y1="176" x2="150" y2="180" stroke-width="2" stroke-linecap="round"/>
+          <line class="dg-stroke flow" x1="210" y1="180" x2="276" y2="170" stroke-width="2" stroke-linecap="round"/>
+          <text class="dg-sub" x="243" y="150" text-anchor="middle">TCP 55443</text>
+        </svg>
+        <figcaption class="cap">Every command goes from your phone to the lamp through your router, and never leaves your home.</figcaption>
+      </figure>
+    </div>
+
+    <section class="block">
+      <h2>What changes when you remove the cloud</h2>
+      <p class="intro">Yeelight bulbs can take commands over the local network. Lumière uses that path and nothing else.</p>
+      <div class="grid3">
+        <div>
+          <span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.5-6 8-6s7 2 8 6"/><path d="M3 3l18 18"/></svg></span>
+          <h3>No account</h3>
+          <p>No sign-up, no email, no password to remember. Open the app and add your lamp.</p>
+        </div>
+        <div>
+          <span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
+          <h3>Nothing leaves your home</h3>
+          <p>No analytics, no ads, no trackers. Your lamps, their names and your scenes stay on your phone.</p>
+        </div>
+        <div>
+          <span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span>
+          <h3>Instant</h3>
+          <p>Commands go straight to the lamp. It keeps responding even when your internet connection is down.</p>
+        </div>
+      </div>
+
+      <div class="compare">
+        <table>
+          <thead><tr><th></th><th>Typical cloud app</th><th>Lumière</th></tr></thead>
+          <tbody>
+            <tr><td>Account</td><td>Required</td><td class="us">None</td></tr>
+            <tr><td>Path of a command</td><td>Phone → remote server → lamp</td><td class="us">Phone → lamp</td></tr>
+            <tr><td>Internet outage</td><td>Lamps unreachable</td><td class="us">Everything works</td></tr>
+            <tr><td>Data sent</td><td>Usage, schedules, devices</td><td class="us">None</td></tr>
+            <tr><td>Away from home</td><td>Possible</td><td class="us">No, that's the price of local</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2>What the app does</h2>
+      <p class="intro">Turn lamps on and off, set brightness, pick a color or a white, start a scene, schedule a sleep timer. Adding a new lamp takes about a minute, right from your phone.</p>
+      <div class="specs">
+        <span class="chip">Brightness 1–100 %</span>
+        <span class="chip">White 1700–6500 K</span>
+        <span class="chip">24-bit RGB color</span>
+        <span class="chip">Sleep timer 0–60 min</span>
+        <span class="chip">15-min sunrise wake-up</span>
+        <span class="chip">English · Français</span>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ============ PRIVACY ============ -->
+<div id="v-privacy" class="view" hidden>
+  <div class="wrap">
+    <article class="doc">
+      <p class="eyebrow">Privacy policy</p>
+      <h1>Lumière collects no personal data</h1>
+      <p class="meta">Android app <span class="mono">com.wynov.lumiere</span> · Publisher: Wynov · Last updated November 2, 2026</p>
+
+      <div class="summary">
+        <p>Lumière works only on your local network. The app has no server, creates no account, and sends no data to Wynov or to any third party. What you save stays on your phone.</p>
+      </div>
+
+      <h2>1. Data we collect</h2>
+      <p>None. Wynov does not receive, store or share any data about you. The app contains no analytics, advertising, crash reporting or social network SDK.</p>
+
+      <h2>2. Data stored on your phone</h2>
+      <p>To work, the app keeps the following in its private storage, on the device only:</p>
+      <ul>
+        <li>your list of lamps: name, room, model, local IP address, MAC address and device ID;</li>
+        <li>your custom scenes and recent colors;</li>
+        <li>the last lamp you viewed.</li>
+      </ul>
+      <p>This information never leaves your phone. You can remove a lamp in Settings, and erase everything by uninstalling the app or clearing its data in Android settings.</p>
+
+      <h2>3. Wi‑Fi password</h2>
+      <p>To add a new lamp, you enter your Wi‑Fi password. The app sends it directly to the lamp, over the lamp's temporary access point, so the lamp can join your network. The app does not keep it and sends it nowhere else.</p>
+
+      <h2>4. Network communications</h2>
+      <p>All communication happens on your local network, between your phone and your lamps:</p>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Purpose</th><th>Protocol</th><th>Recipient</th></tr></thead>
+          <tbody>
+            <tr><td>Adding a new lamp</td><td><code>UDP 54321</code> (miIO)</td><td>The lamp, on its access point</td></tr>
+            <tr><td>Finding lamps</td><td>SSDP and local network scan</td><td>Devices on your network</td></tr>
+            <tr><td>Commands (power, color…)</td><td><code>TCP 55443</code></td><td>The lamp</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The app does not contact any server on the internet, including Yeelight's or Xiaomi's.</p>
+
+      <h2>5. Android permissions</h2>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Permission</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>Location (precise and approximate)</td><td>Android requires it to list Wi‑Fi networks and read the current network name when adding a lamp. The app does not read your geographic location and stores none.</td></tr>
+            <tr><td>Nearby Wi‑Fi devices</td><td>Find the lamp and join its access point while adding it (Android 13 and later).</td></tr>
+            <tr><td>Wi‑Fi and network state, change</td><td>Check that the phone is on the right network, then join and leave the lamp's access point.</td></tr>
+            <tr><td>Wi‑Fi multicast</td><td>Discover lamps on the local network.</td></tr>
+            <tr><td>Internet</td><td>Android requires it for any network connection, including local ones. No connection to the internet is made.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>You can deny or revoke these permissions at any time in Android settings. Without them, you won't be able to add new lamps.</p>
+
+      <h2>6. Sharing with third parties</h2>
+      <p>None. No data is sold, rented or transferred.</p>
+
+      <h2>7. Children</h2>
+      <p>The app collects no data from anyone, including children under 13.</p>
+
+      <h2>8. Your rights</h2>
+      <p>Since Wynov holds no data about you, there is nothing for us to access, correct or delete. Local data is entirely under your control (see section 2). For any GDPR question, write to the address below.</p>
+
+      <h2>9. Changes</h2>
+      <p>If the app changes in a way that affects your data, this page will be updated before that version is released, with a new date at the top.</p>
+
+      <h2>10. Contact</h2>
+      <div class="contact"><span class="addr" data-contact>contact@example.com</span><button type="button" data-copy>Copy address</button></div>
+    </article>
+  </div>
+</div>
+
+<!-- ============ TERMS ============ -->
+<div id="v-terms" class="view" hidden>
+  <div class="wrap">
+    <article class="doc">
+      <p class="eyebrow">Terms of use</p>
+      <h1>Lumière terms of use</h1>
+      <p class="meta">Publisher: Wynov · Last updated November 2, 2026</p>
+
+      <h2>1. Purpose</h2>
+      <p>Lumière is an app for controlling Yeelight bulbs over your local Wi‑Fi network. By using it, you accept these terms.</p>
+
+      <h2>2. Independence</h2>
+      <p>Lumière is an independent app. It is not published, endorsed or sponsored by Yeelight or Xiaomi. Yeelight and Xiaomi are trademarks of their respective owners, mentioned only to indicate compatibility.</p>
+
+      <h2>3. Local operation</h2>
+      <p>The app only works when your phone and your lamps are on the same local network. It cannot control lamps remotely. Lamps must be on a 2.4 GHz Wi‑Fi network secured with WPA2.</p>
+
+      <h2>4. Compatibility</h2>
+      <p>Features were tested on specific models and firmware versions. A different model, or a firmware update from the manufacturer, may make some features unavailable. Adding a new lamp with Lumière may require resetting it, which removes it from other apps.</p>
+
+      <h2>5. Liability</h2>
+      <p>The app is provided as is, with no guarantee of continuous or error-free operation. To the extent permitted by law, Wynov is not liable for indirect damages arising from its use, including a misconfigured lamp or the loss of settings saved on the phone.</p>
+
+      <h2>6. Use</h2>
+      <p>You agree to use the app only with lamps and networks you are authorized to manage.</p>
+
+      <h2>7. Personal data</h2>
+      <p>See the <a href="#privacy" data-view="privacy">privacy policy</a>. The app collects no data.</p>
+
+      <h2>8. Governing law</h2>
+      <p>These terms are governed by French law. They may change; the date at the top shows the latest version.</p>
+
+      <h2>9. Contact</h2>
+      <div class="contact"><span class="addr" data-contact>contact@example.com</span><button type="button" data-copy>Copy address</button></div>
+    </article>
+  </div>
+</div>
+
+<!-- ============ SUPPORT ============ -->
+<div id="v-support" class="view" hidden>
+  <div class="wrap">
+    <article class="doc">
+      <p class="eyebrow">Support</p>
+      <h1>Help and contact</h1>
+      <p class="meta">Answers to the most common questions, then the address to reach us.</p>
+
+      <h2>Before you start</h2>
+      <ul>
+        <li>Your phone and the lamp must be on the same Wi‑Fi network.</li>
+        <li>The lamp only connects over <strong>2.4 GHz</strong>. If your router splits 2.4 and 5 GHz, pick the 2.4 GHz network.</li>
+        <li>WPA2-secured networks only. Enterprise networks and networks with a login page (hotels, public Wi‑Fi) are not supported.</li>
+      </ul>
+
+      <h2>Frequently asked questions</h2>
+      <div class="faq">
+        <details>
+          <summary>How do I add a new lamp?</summary>
+          <ol>
+            <li>In Lumière, tap <strong>+</strong>.</li>
+            <li>A new lamp is already in pairing mode. Otherwise, reset it: at the switch, turn it off and on 5 times in a row, about 2 seconds each time. The lamp changes color, then stays white.</li>
+            <li>Pick the detected lamp (a “yeelink‑light‑…” network) and accept Android's prompt to join that network.</li>
+            <li>Choose your Wi‑Fi and enter its password. It takes about a minute; the lamp blinks when it's done.</li>
+          </ol>
+        </details>
+        <details>
+          <summary>My lamp is already set up with the Yeelight app</summary>
+          <p>In the Yeelight app, open the lamp's settings and turn on “LAN Control”. The lamp then shows up under “My lamps” in Lumière, with an “Add” button. No reset needed.</p>
+        </details>
+        <details>
+          <summary>Why does the app ask for my location?</summary>
+          <p>Android requires this permission to list nearby Wi‑Fi networks and read the current network name. Lumière does not read your location and sends nothing. Details in the <a href="#privacy" data-view="privacy">privacy policy</a>.</p>
+        </details>
+        <details>
+          <summary>The lamp shows as “offline”</summary>
+          <p>Check that your phone is on your home Wi‑Fi (not on mobile data). If your router gave the lamp a new address, the app finds it again on its own within a few seconds. Otherwise, switch the lamp off for 10 seconds and back on.</p>
+        </details>
+        <details>
+          <summary>Can I control my lamps when I'm away from home?</summary>
+          <p>No. That's the trade-off of working without the cloud: commands only travel over your local network.</p>
+        </details>
+        <details>
+          <summary>How do I delete all my data?</summary>
+          <p>Uninstall the app, or clear its data in Android Settings › Apps › Lumière › Storage. Nothing is kept anywhere else.</p>
+        </details>
+      </div>
+
+      <h2>Contact us</h2>
+      <p>Include your lamp model, your phone model and your Android version.</p>
+      <div class="contact"><span class="addr" data-contact>contact@example.com</span><button type="button" data-copy>Copy address</button></div>
+    </article>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Wynov · Lumière is not affiliated with Yeelight or Xiaomi.</span>
+    <nav aria-label="Footer">
+      <a href="#privacy" data-view="privacy">Privacy</a>
+      <a href="#terms" data-view="terms">Terms</a>
+      <a href="#support" data-view="support">Support</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var views = ['home', 'privacy', 'terms', 'support'];
+  function show(name, scroll) {
+    if (views.indexOf(name) < 0) name = 'home';
+    views.forEach(function (v) { document.getElementById('v-' + v).hidden = v !== name; });
+    document.querySelectorAll('nav.tabs a').forEach(function (a) {
+      if (a.dataset.view === name) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    if (scroll) window.scrollTo(0, 0);
+  }
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('a[data-view]');
+    if (!a) return;
+    e.preventDefault();
+    try { history.replaceState(null, '', '#' + a.dataset.view); } catch (_) {}
+    show(a.dataset.view, true);
+  });
+  window.addEventListener('hashchange', function () { show(location.hash.slice(1), true); });
+  show(location.hash.slice(1), false);
+
+  document.querySelectorAll('[data-copy]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var addr = b.parentNode.querySelector('[data-contact]');
+      var done = function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy address'; }, 1600); };
+      var fallback = function () { var r = document.createRange(); r.selectNodeContents(addr); var s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+      try { navigator.clipboard.writeText(addr.textContent.trim()).then(done, fallback); } catch (_) { fallback(); }
+    });
+  });
+})();
+</script>
