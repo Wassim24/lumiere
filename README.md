@@ -4,6 +4,14 @@ Control your Yeelight bulbs over your home Wi‑Fi, with no account and no cloud
 
 Lumière talks to your lamps directly on your local network. Nothing goes through a remote server: no sign-up, no analytics, no ads, no trackers. Your lamps keep working when your internet connection is down.
 
+<p align="center">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.jpg" width="19%" alt="Home screen: every light, one tap">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.jpg" width="19%" alt="Light control: any color, any white">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.jpg" width="19%" alt="Scenes">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.jpg" width="19%" alt="Setup in a minute">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/5.jpg" width="19%" alt="No account, no cloud">
+</p>
+
 ## Features
 
 - Turn lamps on and off from the home screen
