@@ -1,0 +1,19 @@
+<p>Lumière pilote vos ampoules Yeelight directement sur le réseau de la maison. Rien ne passe par un serveur distant : pas de compte, pas de statistiques, pas de publicité, pas de traceur. Vos lampes répondent même quand internet est coupé.</p>
+
+<p><b>Fonctions</b></p>
+<ul>
+<li>Allumer et éteindre ses lampes depuis l'accueil</li>
+<li>Intensité de 1 à 100 %</li>
+<li>Toutes les couleurs, ou un blanc de 1700 K (chaud) à 6500 K (froid)</li>
+<li>Ambiances fournies (Concentration, Lecture, Cozy, Détente, Cinéma, Veilleuse…) et ambiances perso</li>
+<li>Minuterie d'extinction et réveil progressif de 15 minutes</li>
+<li>Ajout d'une lampe neuve depuis l'app en une minute environ</li>
+</ul>
+
+<p><b>Confidentialité</b></p>
+<p>L'application ne se connecte jamais à internet. Vos lampes et ambiances restent sur le téléphone. Android exige l'autorisation de localisation pour lister les réseaux Wi‑Fi lors de l'ajout d'une lampe ; Lumière ne lit jamais votre position.</p>
+
+<p><b>Prérequis</b></p>
+<p>Le téléphone et les lampes doivent être sur le même réseau Wi‑Fi 2,4 GHz en WPA2. Pas de contrôle hors de la maison. Testé sur l'ampoule Yeelight Color (yeelink.light.color3) ; les autres ampoules Wi‑Fi Yeelight avec contrôle LAN devraient fonctionner.</p>
+
+<p>Lumière n'est pas affiliée à Yeelight ni à Xiaomi.</p>

@@ -1,0 +1,19 @@
+<p>Lumière controls your Yeelight bulbs directly over your home network. Nothing goes through a remote server: no account, no analytics, no ads, no trackers. Your lamps keep working when your internet connection is down.</p>
+
+<p><b>Features</b></p>
+<ul>
+<li>Turn lamps on and off from the home screen</li>
+<li>Brightness from 1 to 100 %</li>
+<li>Any color, or a white from warm 1700 K to cool 6500 K</li>
+<li>Built-in scenes (Focus, Reading, Cozy, Relax, Cinema, Night light…) and your own</li>
+<li>Sleep timer and a 15-minute sunrise wake-up</li>
+<li>Add a new lamp from the app in about a minute</li>
+</ul>
+
+<p><b>Privacy</b></p>
+<p>The app never connects to the internet. Your lamps and scenes are stored on your phone only. Android requires the location permission to list Wi‑Fi networks while adding a lamp; Lumière never reads your location.</p>
+
+<p><b>Requirements</b></p>
+<p>Your phone and your lamps must be on the same 2.4 GHz WPA2 Wi‑Fi network. Lamps can't be controlled away from home. Tested on the Yeelight Color bulb (yeelink.light.color3); other Yeelight Wi‑Fi bulbs with LAN control should work.</p>
+
+<p>Lumière is not affiliated with Yeelight or Xiaomi.</p>
