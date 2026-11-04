@@ -2,7 +2,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState } from 'react-native';
 import { useSyncExternalStore } from 'react';
-import { Coalescer, LanConnection } from '../protocol/lan';
+import { LanConnection } from '../protocol/lan';
 import { cmd } from '../protocol/commands';
 import type { Found } from '../protocol/discovery';
 import { nativeTransport, Yeenet } from '../net/native';
@@ -10,7 +10,6 @@ import { discover, lanReachable } from '../net/discover';
 import { BUILTIN_PRESETS, type Preset } from './presets';
 import { hsvRgb } from './color';
 import type { WifiInfo } from '../../modules/yeenet';
-import { t } from '../i18n';
 
 export type Lamp = {
   id: string;
@@ -74,7 +73,7 @@ let state: State = {
 };
 
 const listeners = new Set<() => void>();
-function set(patch: Partial<State> | ((s: State) => Partial<State>)) {
+export function set(patch: Partial<State> | ((s: State) => Partial<State>)) {
   state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) };
   listeners.forEach((l) => l());
 }
@@ -91,11 +90,12 @@ export function useStore<T>(sel: (s: State) => T): T {
 
 export const getState = () => state;
 
-// ---------------------------------------------------------------- persistence
-
 const KEY = 'lumiere.v1';
+const AUTO_DISCOVERY_MIN_INTERVAL_MS = 30_000;
+const AUTO_DISCOVERY_DELAY_MS = 1500;
+const SNACK_DURATION_MS = 5000;
 
-async function persist() {
+export async function persist() {
   const { lamps, customPresets, hiddenPresets, recentColors, currentLampId } = state;
   await AsyncStorage.setItem(KEY, JSON.stringify({ lamps, customPresets, hiddenPresets, recentColors, currentLampId }));
 }
@@ -105,16 +105,13 @@ const uuid = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) =
   return (c === 'x' ? r : (r & 3) | 8).toString(16);
 });
 
-// ---------------------------------------------------------------- connections
-
 const conns = new Map<string, LanConnection>();
-const coalescer = new Coalescer(333);
 
-const offline = (): LampState => ({
+export const offline = (): LampState => ({
   online: false, power: false, bright: 100, mode: 'white', rgb: 0xffffff, ct: 4000, hue: 0, sat: 0, flowing: false, delayOffMin: 0,
 });
 
-function patchLamp(id: string, p: Partial<LampState>) {
+export function patchLamp(id: string, p: Partial<LampState>) {
   set((s) => ({ states: { ...s.states, [id]: { ...(s.states[id] ?? offline()), ...p } } }));
 }
 
@@ -136,7 +133,7 @@ function applyProps(id: string, props: Record<string, string>) {
   patchLamp(id, p);
 }
 
-function connFor(lamp: Lamp): LanConnection {
+export function connFor(lamp: Lamp): LanConnection {
   let c = conns.get(lamp.id);
   if (!c) {
     c = new LanConnection(nativeTransport, lamp.ip);
@@ -174,18 +171,16 @@ function stopAll() {
   conns.forEach((c) => c.stop());
 }
 
-// ---------------------------------------------------------------- discovery
-
 let discoveryTimer: ReturnType<typeof setTimeout> | null = null;
 let lastAutoDiscovery = 0;
 /** Background re-discovery after a connection failure (the IP may have changed); at most every 30 s. */
 function scheduleDiscovery() {
-  if (discoveryTimer || Date.now() - lastAutoDiscovery < 30_000) return;
+  if (discoveryTimer || Date.now() - lastAutoDiscovery < AUTO_DISCOVERY_MIN_INTERVAL_MS) return;
   lastAutoDiscovery = Date.now();
   discoveryTimer = setTimeout(() => {
     discoveryTimer = null;
     runDiscovery();
-  }, 1500);
+  }, AUTO_DISCOVERY_DELAY_MS);
 }
 
 export function updateWifi() {
@@ -203,7 +198,6 @@ export async function runDiscovery() {
   set({ searching: true });
   try {
     const found = await discover();
-    console.log('[discover] found', JSON.stringify(found.map((f) => ({ ip: f.ip, did: f.did, src: f.source }))));
     let changed = false;
     const lamps = state.lamps.map((l) => {
       const f = found.find((x) => x.did === l.did);
@@ -229,8 +223,6 @@ export async function runDiscovery() {
   }
 }
 
-// ---------------------------------------------------------------- lifecycle
-
 let started = false;
 export async function init() {
   if (started) return;
@@ -247,7 +239,9 @@ export async function init() {
         currentLampId: d.currentLampId ?? null,
       });
     }
-  } catch {}
+  } catch (e) {
+    console.warn('[store] could not restore saved state', String(e));
+  }
   set({ ready: true });
   updateWifi();
   startAll();
@@ -261,130 +255,15 @@ export async function init() {
   });
 }
 
-// ---------------------------------------------------------------- snack
-
 let snackSeq = 0;
 export function showSnack(text: string, retry?: () => void) {
   const snack = { id: ++snackSeq, text, retry };
   set({ snack });
   setTimeout(() => {
     if (state.snack?.id === snack.id) set({ snack: null });
-  }, 5000);
+  }, SNACK_DURATION_MS);
 }
 export const dismissSnack = () => set({ snack: null });
-
-// ---------------------------------------------------------------- lamp commands
-
-function lampOf(id: string) {
-  const l = state.lamps.find((x) => x.id === id);
-  if (!l) throw new Error('unknown lamp');
-  return l;
-}
-
-/** Optimistic update; on failure revert to the real state and offer a retry. */
-async function run(id: string, optimistic: Partial<LampState>, action: (c: LanConnection) => Promise<unknown>) {
-  const lamp = lampOf(id);
-  patchLamp(id, optimistic);
-  try {
-    await action(connFor(lamp));
-  } catch (e) {
-    refresh(id);
-    showSnack(t.common.notResponding(lamp.name), () => run(id, optimistic, action));
-  }
-}
-
-async function ensureOn(id: string, c: LanConnection) {
-  if (!state.states[id]?.power) {
-    await cmd.setPower(c, true);
-    patchLamp(id, { power: true });
-  }
-}
-
-export const lampActions = {
-  setPower: (id: string, on: boolean) => run(id, { power: on }, (c) => cmd.setPower(c, on)),
-  toggle: (id: string) => {
-    const on = !state.states[id]?.power;
-    return run(id, { power: on }, (c) => cmd.setPower(c, on));
-  },
-  /** Slider drag: throttled + coalesced; call with final=true on release. */
-  setBright: (id: string, v: number, final = false) => {
-    patchLamp(id, { bright: v });
-    const lamp = lampOf(id);
-    coalescer.push(id + ':bright', () =>
-      run(id, { bright: v }, async (c) => {
-        await ensureOn(id, c);
-        await cmd.setBright(c, v);
-      }),
-    );
-    if (final) coalescer.flush(id + ':bright');
-    void lamp;
-  },
-  setCt: (id: string, k: number, final = false) => {
-    patchLamp(id, { ct: k, mode: 'white' });
-    coalescer.push(id + ':color', () =>
-      run(id, { ct: k, mode: 'white' }, async (c) => {
-        await ensureOn(id, c);
-        await cmd.setCt(c, k);
-      }),
-    );
-    if (final) coalescer.flush(id + ':color');
-  },
-  setHs: (id: string, hue: number, sat: number, final = false) => {
-    const rgb = hsvRgb(hue, sat);
-    patchLamp(id, { rgb, hue, sat: sat * 100, mode: 'color' });
-    coalescer.push(id + ':color', () =>
-      run(id, { rgb, mode: 'color' }, async (c) => {
-        await ensureOn(id, c);
-        await cmd.setRgb(c, rgb);
-      }),
-    );
-    if (final) {
-      coalescer.flush(id + ':color');
-      addRecent(rgb);
-    }
-  },
-  setRgb: (id: string, rgb: number) => {
-    addRecent(rgb);
-    return run(id, { rgb, mode: 'color' }, async (c) => {
-      await ensureOn(id, c);
-      await cmd.setRgb(c, rgb);
-    });
-  },
-  /** Switch mode without a specific value: reuse the last known one. */
-  setMode: (id: string, mode: 'color' | 'white') => {
-    const s = state.states[id] ?? offline();
-    if (mode === 'white') return run(id, { mode: 'white' }, async (c) => { await ensureOn(id, c); await cmd.setCt(c, s.ct); });
-    const rgb = s.rgb === 0xffffff || !s.rgb ? state.recentColors[0] : s.rgb;
-    return run(id, { mode: 'color', rgb }, async (c) => { await ensureOn(id, c); await cmd.setRgb(c, rgb); });
-  },
-  applyPreset: (id: string, p: Preset) => {
-    if (p.mode === 'white')
-      return run(id, { power: true, mode: 'white', ct: p.value!, bright: p.bright!, flowing: false }, (c) => cmd.sceneCt(c, p.value!, p.bright!));
-    if (p.mode === 'color')
-      return run(id, { power: true, mode: 'color', rgb: p.value!, bright: p.bright!, flowing: false }, (c) => cmd.sceneColor(c, p.value!, p.bright!));
-    // Flow (wake-up): start from 1700 K at 1 %, then ramp.
-    return run(id, { power: true, mode: 'white', ct: 1700, bright: 1, flowing: true }, async (c) => {
-      await cmd.sceneCt(c, 1700, 1);
-      await cmd.startCf(c, 1, p.flowAction ?? 1, p.flow!);
-    });
-  },
-  setTimer: (id: string, minutes: number) => {
-    set((s) => ({ timerChoice: { ...s.timerChoice, [id]: minutes } }));
-    if (minutes === 0) return run(id, { delayOffMin: 0 }, (c) => cmd.cronDel(c));
-    return run(id, { delayOffMin: minutes }, async (c) => {
-      await ensureOn(id, c);
-      await cmd.cronAdd(c, minutes);
-    });
-  },
-};
-
-function addRecent(rgb: number) {
-  const recentColors = [rgb, ...state.recentColors.filter((c) => c !== rgb)].slice(0, 6);
-  set({ recentColors });
-  persist();
-}
-
-// ---------------------------------------------------------------- lamps management
 
 export function setCurrentLamp(id: string) {
   set({ currentLampId: id });
@@ -414,16 +293,13 @@ export function removeLamp(id: string) {
   conns.get(id)?.stop();
   conns.delete(id);
   set((s) => {
-    const states = { ...s.states };
-    delete states[id];
+    const { [id]: _removed, ...states } = s.states;
     const lamps = s.lamps.filter((l) => l.id !== id);
     return { lamps, states, currentLampId: s.currentLampId === id ? lamps[0]?.id ?? null : s.currentLampId };
   });
   persist();
   scheduleDiscovery();
 }
-
-// ---------------------------------------------------------------- presets
 
 export function allPresets(s: State = state): Preset[] {
   return [...BUILTIN_PRESETS, ...s.customPresets];

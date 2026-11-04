@@ -6,8 +6,9 @@ import { ActionSheet, Chip, Prompt, WifiBanner } from '../ui/kit';
 import { Plus } from '../ui/Icons';
 import { C, S } from '../ui/theme';
 import {
-  activePreset, deletePreset, lampActions, renamePreset, saveCurrentAsPreset, setCurrentLamp, toggleHiddenPreset, useStore,
+  activePreset, deletePreset, renamePreset, saveCurrentAsPreset, setCurrentLamp, toggleHiddenPreset, useStore,
 } from '../store/store';
+import { lampActions } from '../store/actions';
 import { BUILTIN_PRESETS, type Preset } from '../store/presets';
 import { presetDot, presetMeta } from '../store/display';
 import { t } from '../i18n';

@@ -8,8 +8,9 @@ import { Slider } from '../ui/Slider';
 import { ColorWheel } from '../ui/ColorWheel';
 import { C, S } from '../ui/theme';
 import {
-  activePreset, allPresets, lampActions, refresh, removeLamp, saveCurrentAsPreset, updateLamp, useStore,
+  activePreset, allPresets, refresh, removeLamp, saveCurrentAsPreset, updateLamp, useStore,
 } from '../store/store';
+import { lampActions } from '../store/actions';
 import { hex, hsvRgb, rgbHs } from '../store/color';
 import { lampDetail, lampHex, presetDot } from '../store/display';
 import { t } from '../i18n';
