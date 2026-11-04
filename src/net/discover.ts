@@ -16,7 +16,6 @@ export async function discover(): Promise<Found[]> {
       return [];
     }),
   ]);
-  console.log(`[discover] ssdp=${ssdp.length} sweep=${sweep.length}`);
   const byDid = new Map<number, Found>();
   for (const r of sweep) {
     const f = parseSweepReply(r.ip, r.data);
