@@ -39,14 +39,17 @@ function listNetworks(scan: WifiNetwork[]): Network[] {
 }
 
 const BACK: Partial<Record<PairingErrorCode, Phase>> = { NotFoundAfterJoin: 'wifi' };
+const ANDROID_13 = 33;
 
 async function askWifiPermission() {
   if (Platform.OS !== 'android') return;
-  const perms: any[] = [PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION];
-  if (Number(Platform.Version) >= 33) perms.push('android.permission.NEARBY_WIFI_DEVICES');
+  const { ACCESS_FINE_LOCATION, NEARBY_WIFI_DEVICES } = PermissionsAndroid.PERMISSIONS;
+  const perms = Number(Platform.Version) >= ANDROID_13 ? [ACCESS_FINE_LOCATION, NEARBY_WIFI_DEVICES] : [ACCESS_FINE_LOCATION];
   try {
     await PermissionsAndroid.requestMultiple(perms);
-  } catch {}
+  } catch (e) {
+    console.warn('[pairing] permission request failed', String(e));
+  }
 }
 
 export function Pairing({ onClose, onDone }: { onClose: () => void; onDone: (lampId: string) => void }) {

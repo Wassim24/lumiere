@@ -35,8 +35,8 @@ export async function pair(opts: {
   let gateway: string;
   try {
     ({ gateway } = await Yeenet.joinHotspot('yeelink-light-', 60_000));
-  } catch (e: any) {
-    throw new PairingError('HotspotNotJoined', e?.message);
+  } catch (e) {
+    throw new PairingError('HotspotNotJoined', e instanceof Error ? e.message : undefined);
   }
   let info: { model?: string; mac?: string } = {};
   let did = 0;

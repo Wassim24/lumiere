@@ -16,6 +16,14 @@ export class LanError extends Error {
   }
 }
 
+type LanMessage = {
+  id?: number;
+  result?: unknown;
+  error?: { message?: string; code?: number };
+  method?: string;
+  params?: Record<string, string>;
+};
+
 type Pending = { resolve: (v: any) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout>; sock: LineSocket };
 
 class ClosedError extends LanError {}
@@ -73,7 +81,7 @@ export class LanConnection {
   }
 
   private handleLine = (line: string) => {
-    let msg: any;
+    let msg: LanMessage;
     try {
       msg = JSON.parse(line);
     } catch {

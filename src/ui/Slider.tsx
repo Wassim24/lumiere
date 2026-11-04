@@ -10,7 +10,7 @@ type Props = {
   value: number;
   onChange: (v: number) => void;
   onComplete: (v: number) => void;
-  colors?: string[]; // gradient track
+  colors?: readonly [string, string, ...string[]]; // gradient track
   fill?: string; // solid fill up to value
   label: string;
   disabled?: boolean;
@@ -71,7 +71,7 @@ export function Slider({ min, max, step = 1, value, onChange, onComplete, colors
       {...pan.panHandlers}
     >
       <View pointerEvents="none" style={{ flex: 1 }}>
-        {colors && <LinearGradient colors={colors as any} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ flex: 1 }} />}
+        {colors && <LinearGradient colors={colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ flex: 1 }} />}
         {fill && <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct * 100}%`, backgroundColor: fill }} />}
         <View
           style={{
